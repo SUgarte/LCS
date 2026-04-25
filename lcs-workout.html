@@ -1,0 +1,777 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="LCS Rutina">
+  <meta name="theme-color" content="#0a0a0f">
+  <title>LCS Rutina</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0a0a0f;
+      --surface: #13131a;
+      --surface2: #1c1c26;
+      --border: #2a2a38;
+      --accent: #4fffb0;
+      --accent2: #ff6b6b;
+      --accent3: #ffd166;
+      --text: #e8e8f0;
+      --text-dim: #6b6b88;
+      --text-muted: #3a3a52;
+      --phase1: #4fffb0;
+      --phase2: #4fc3ff;
+      --phase3: #ff9f4a;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Syne', sans-serif;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* TOP NAV */
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: rgba(10,10,15,0.92);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+      padding: 14px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .topbar-title { font-size: 15px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; }
+    .topbar-progress {
+      font-family: 'DM Mono', monospace;
+      font-size: 12px;
+      color: var(--accent);
+      letter-spacing: 0.05em;
+    }
+    .reset-btn {
+      background: none;
+      border: 1px solid var(--border);
+      color: var(--text-dim);
+      font-family: 'DM Mono', monospace;
+      font-size: 11px;
+      padding: 5px 10px;
+      border-radius: 6px;
+      cursor: pointer;
+      letter-spacing: 0.05em;
+    }
+    .reset-btn:active { background: var(--surface2); }
+
+    /* OVERALL PROGRESS BAR */
+    .progress-bar-wrap {
+      height: 3px;
+      background: var(--surface2);
+      width: 100%;
+    }
+    .progress-bar-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--accent), var(--phase3));
+      transition: width 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    /* MAIN */
+    main { padding: 0 0 100px; }
+
+    /* PHASE HEADER */
+    .phase-header {
+      padding: 24px 20px 12px;
+      display: flex;
+      align-items: baseline;
+      gap: 12px;
+    }
+    .phase-tag {
+      font-family: 'DM Mono', monospace;
+      font-size: 10px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-weight: 500;
+    }
+    .phase-name {
+      font-size: 18px;
+      font-weight: 800;
+      letter-spacing: -0.01em;
+    }
+    .phase-time {
+      font-family: 'DM Mono', monospace;
+      font-size: 11px;
+      color: var(--text-dim);
+      margin-left: auto;
+    }
+
+    .phase-1 .phase-tag { background: rgba(79,255,176,0.12); color: var(--phase1); }
+    .phase-2 .phase-tag { background: rgba(79,195,255,0.12); color: var(--phase2); }
+    .phase-3 .phase-tag { background: rgba(255,159,74,0.12); color: var(--phase3); }
+
+    /* EXERCISE CARD */
+    .exercise-card {
+      margin: 8px 16px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      overflow: hidden;
+      transition: border-color 0.2s;
+    }
+    .exercise-card.all-done {
+      border-color: transparent;
+      background: var(--surface2);
+    }
+    .exercise-card.all-done .exercise-name {
+      color: var(--text-dim);
+    }
+
+    .exercise-header {
+      padding: 16px 18px 12px;
+      display: flex;
+      align-items: flex-start;
+      gap: 14px;
+    }
+    .exercise-icon {
+      width: 38px;
+      height: 38px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      flex-shrink: 0;
+    }
+    .exercise-info { flex: 1; min-width: 0; }
+    .exercise-name {
+      font-size: 15px;
+      font-weight: 700;
+      letter-spacing: -0.01em;
+      line-height: 1.2;
+      margin-bottom: 4px;
+    }
+    .exercise-meta {
+      font-family: 'DM Mono', monospace;
+      font-size: 11px;
+      color: var(--text-dim);
+      letter-spacing: 0.04em;
+    }
+    .exercise-focus {
+      font-size: 11px;
+      color: var(--text-muted);
+      margin-top: 3px;
+      font-style: italic;
+    }
+
+    .done-badge {
+      display: none;
+      font-size: 18px;
+      flex-shrink: 0;
+      align-self: center;
+    }
+    .all-done .done-badge { display: block; }
+    .all-done .series-grid { display: none; }
+
+    /* SERIES GRID */
+    .series-grid {
+      padding: 0 18px 16px;
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .serie-btn {
+      flex: 1;
+      min-width: 60px;
+      max-width: 90px;
+      height: 48px;
+      border-radius: 10px;
+      border: 1.5px solid var(--border);
+      background: var(--surface2);
+      color: var(--text-dim);
+      font-family: 'DM Mono', monospace;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 5px;
+      transition: all 0.15s;
+      position: relative;
+      overflow: hidden;
+    }
+    .serie-btn:active { transform: scale(0.95); }
+    .serie-btn.checked {
+      background: rgba(79,255,176,0.08);
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+    .serie-btn.checked::after {
+      content: '✓';
+      font-size: 14px;
+    }
+    .serie-btn:not(.checked)::after {
+      content: attr(data-label);
+    }
+
+    /* Phase color variations */
+    .phase-2 .serie-btn.checked {
+      background: rgba(79,195,255,0.08);
+      border-color: var(--phase2);
+      color: var(--phase2);
+    }
+    .phase-3 .serie-btn.checked {
+      background: rgba(255,159,74,0.08);
+      border-color: var(--phase3);
+      color: var(--phase3);
+    }
+
+    /* DIVIDER */
+    .phase-divider {
+      height: 1px;
+      background: var(--border);
+      margin: 20px 16px 0;
+      opacity: 0.5;
+    }
+
+    /* IMAGE MODAL */
+    .img-modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: 300;
+      background: rgba(0,0,0,0.85);
+      backdrop-filter: blur(8px);
+      align-items: flex-end;
+      justify-content: center;
+    }
+    .img-modal-overlay.visible { display: flex; }
+    .img-modal {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 24px 24px 0 0;
+      width: 100%;
+      max-width: 520px;
+      padding: 20px 20px 40px;
+      animation: slideUp 0.3s cubic-bezier(0.34,1.56,0.64,1);
+    }
+    @keyframes slideUp {
+      from { transform: translateY(100%); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+    .img-modal-handle {
+      width: 36px;
+      height: 4px;
+      background: var(--border);
+      border-radius: 2px;
+      margin: 0 auto 16px;
+    }
+    .img-modal-title {
+      font-size: 16px;
+      font-weight: 700;
+      margin-bottom: 4px;
+      letter-spacing: -0.01em;
+    }
+    .img-modal-meta {
+      font-family: 'DM Mono', monospace;
+      font-size: 11px;
+      color: var(--accent);
+      margin-bottom: 16px;
+      letter-spacing: 0.04em;
+    }
+    .img-modal-img {
+      width: 100%;
+      height: 220px;
+      object-fit: cover;
+      border-radius: 14px;
+      background: var(--surface2);
+    }
+    .img-modal-focus {
+      margin-top: 12px;
+      font-size: 13px;
+      color: var(--text-dim);
+      line-height: 1.5;
+    }
+    .img-modal-close {
+      margin-top: 16px;
+      width: 100%;
+      height: 44px;
+      border-radius: 10px;
+      border: 1.5px solid var(--border);
+      background: var(--surface2);
+      color: var(--text);
+      font-family: 'Syne', sans-serif;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      letter-spacing: 0.03em;
+    }
+    .img-modal-close:active { background: var(--border); }
+
+    /* COMPLETION SCREEN */
+    .completion-screen {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: var(--bg);
+      z-index: 200;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 40px;
+    }
+    .completion-screen.visible { display: flex; }
+    .completion-emoji { font-size: 72px; margin-bottom: 24px; animation: bounce 0.6s ease; }
+    .completion-title { font-size: 32px; font-weight: 800; letter-spacing: -0.02em; margin-bottom: 12px; }
+    .completion-sub { font-family: 'DM Mono', monospace; font-size: 13px; color: var(--text-dim); line-height: 1.6; }
+    .completion-btn {
+      margin-top: 40px;
+      background: var(--accent);
+      color: var(--bg);
+      border: none;
+      font-family: 'Syne', sans-serif;
+      font-size: 14px;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      padding: 16px 32px;
+      border-radius: 12px;
+      cursor: pointer;
+    }
+    .completion-btn:active { opacity: 0.85; }
+
+    @keyframes bounce {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-20px); }
+    }
+
+    /* TIMER STRIP */
+    .timer-strip {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: rgba(13,13,20,0.95);
+      backdrop-filter: blur(12px);
+      border-top: 1px solid var(--border);
+      padding: 12px 20px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+    .timer-display {
+      font-family: 'DM Mono', monospace;
+      font-size: 28px;
+      font-weight: 500;
+      color: var(--accent);
+      letter-spacing: 0.04em;
+      min-width: 90px;
+    }
+    .timer-display.resting { color: var(--accent3); }
+    .timer-label {
+      font-size: 11px;
+      color: var(--text-dim);
+      font-family: 'DM Mono', monospace;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+    .timer-controls { display: flex; gap: 8px; }
+    .timer-btn {
+      width: 44px;
+      height: 44px;
+      border-radius: 10px;
+      border: 1.5px solid var(--border);
+      background: var(--surface2);
+      color: var(--text);
+      font-size: 18px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .timer-btn.primary {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: var(--bg);
+    }
+    .timer-btn:active { transform: scale(0.93); }
+
+    .rest-btn {
+      flex: 1;
+      height: 44px;
+      border-radius: 10px;
+      border: 1.5px solid var(--border);
+      background: rgba(255,209,102,0.06);
+      color: var(--accent3);
+      font-family: 'DM Mono', monospace;
+      font-size: 12px;
+      letter-spacing: 0.06em;
+      cursor: pointer;
+      text-transform: uppercase;
+    }
+    .rest-btn:active { background: rgba(255,209,102,0.12); }
+
+  </style>
+</head>
+<body>
+
+<!-- TOP BAR -->
+<div class="topbar">
+  <div class="topbar-title">LCS Rutina</div>
+  <div class="topbar-progress" id="topProgress">0 / 0</div>
+  <button class="reset-btn" onclick="resetAll()">reset</button>
+</div>
+<div class="progress-bar-wrap">
+  <div class="progress-bar-fill" id="progressFill" style="width:0%"></div>
+</div>
+
+<main id="mainContent"></main>
+
+<!-- IMAGE MODAL -->
+<div class="img-modal-overlay" id="imgModal" onclick="closeImgModal(event)">
+  <div class="img-modal">
+    <div class="img-modal-handle"></div>
+    <div class="img-modal-title" id="modalTitle"></div>
+    <div class="img-modal-meta" id="modalMeta"></div>
+    <img class="img-modal-img" id="modalImg" src="" alt="">
+    <div class="img-modal-focus" id="modalFocus"></div>
+    <button class="img-modal-close" onclick="closeImgModalBtn()">Cerrar</button>
+  </div>
+</div>
+
+<!-- COMPLETION SCREEN -->
+<div class="completion-screen" id="completionScreen">
+  <div class="completion-emoji">🔥</div>
+  <div class="completion-title">Sesión<br>completada</div>
+  <div class="completion-sub">Todas las series<br>están hechas.</div>
+  <button class="completion-btn" onclick="resetAll()">Nueva sesión</button>
+</div>
+
+<!-- TIMER STRIP -->
+<div class="timer-strip">
+  <div>
+    <div class="timer-display" id="timerDisplay">00:00</div>
+    <div class="timer-label" id="timerLabel">stopwatch</div>
+  </div>
+  <button class="rest-btn" id="restBtn" onclick="startRest()">
+    descanso 60s
+  </button>
+  <div class="timer-controls">
+    <button class="timer-btn" onclick="resetTimer()">↺</button>
+    <button class="timer-btn primary" id="startStopBtn" onclick="toggleTimer()">▶</button>
+  </div>
+</div>
+
+<script>
+const PHASES = [
+  {
+    id: 1,
+    tag: "Fase 1",
+    name: "Liberación / Movilidad",
+    time: "8–10 min",
+    class: "phase-1",
+    icon: "🌊",
+    exercises: [
+      { name: "Hip flexor stretch (lunge 90/90)", meta: "2 × 60 seg por lado", focus: "Psoas y recto femoral — mantén pelvis neutra, no arquees la espalda al inclinarte hacia adelante.", icon: "🦵", series: 2, isTime: true, img: "https://www.yogajournal.com/wp-content/uploads/2021/12/low-lunge-crescent.jpg?crop=535:301&width=1070&enable=upscale" },
+      { name: "Couch stretch", meta: "2 × 60 seg por lado", focus: "Recto femoral profundo — talón al glúteo, rodilla en el piso, cadera empuja hacia el frente.", icon: "🧘", series: 2, isTime: true, img: "https://upload.wikimedia.org/wikipedia/commons/thumb/8/83/Couch_Stretch.jpg/640px-Couch_Stretch.jpg" },
+      { name: "Foam roller lumbares + glúteos", meta: "2–3 min total", focus: "Rueda lento, detente 20–30 seg en los puntos tensos. No corras el rodillo.", icon: "🪵", series: 1, isTime: true, img: "https://www.spotebi.com/wp-content/uploads/2016/02/foam-rolling-glutes-exercise-illustration.jpg" },
+      { name: "Cat-cow lento", meta: "2 × 10 reps", focus: "Movilidad lumbar segmentada — cada vértebra se mueve en secuencia, ritmo respiratorio.", icon: "🐄", series: 2, isTime: false, img: "https://www.yogajournal.com/wp-content/uploads/2021/10/cat-cow_Andrew-Clark.jpg" },
+    ]
+  },
+  {
+    id: 2,
+    tag: "Fase 2",
+    name: "Activación Aislada",
+    time: "15–18 min",
+    class: "phase-2",
+    icon: "⚡",
+    exercises: [
+      { name: "Glute bridge + isométrico", meta: "3 × 15 (hold 3 seg)", focus: "Aprieta glúteos al subir. Si la lumbar siente el trabajo, estás hiperextendiendo — baja la altura.", icon: "🍑", series: 3, isTime: false, img: "https://www.spotebi.com/wp-content/uploads/2014/10/glute-bridge-exercise-illustration-spotebi.jpg" },
+      { name: "Clamshells con banda", meta: "3 × 15 por lado", focus: "Glúteo medio — la cadera no rota. Solo abre la rodilla de arriba como una almeja.", icon: "🦀", series: 3, isTime: false, img: "https://www.spotebi.com/wp-content/uploads/2016/03/clamshell-exercise-illustration.jpg" },
+      { name: "Dead bug", meta: "3 × 8 por lado", focus: "Core profundo — espalda baja PEGADA al piso en todo momento. Si se despega, es demasiado.", icon: "🐛", series: 3, isTime: false, img: "https://www.spotebi.com/wp-content/uploads/2015/09/dead-bug-exercise-illustration.jpg" },
+      { name: "Bird dog", meta: "3 × 8 por lado", focus: "Sin rotación de pelvis — extiende lento, pausa 2 seg arriba, baja controlado.", icon: "🐦", series: 3, isTime: false, img: "https://www.spotebi.com/wp-content/uploads/2014/10/bird-dog-exercise-illustration-spotebi.jpg" },
+      { name: "Hollow body hold", meta: "3 × 20–30 seg", focus: "Antilordosis — zona lumbar aplastada contra el piso. Brazos al techo o extendidos arriba.", icon: "🫙", series: 3, isTime: true, img: "https://www.spotebi.com/wp-content/uploads/2015/10/hollow-body-hold-exercise-illustration.jpg" },
+    ]
+  },
+  {
+    id: 3,
+    tag: "Fase 3",
+    name: "Integración Funcional",
+    time: "10–12 min",
+    class: "phase-3",
+    icon: "🏋️",
+    exercises: [
+      { name: "Hip thrust con peso", meta: "3 × 12", focus: "Glúteo mayor bajo carga — espalda apoyada en banco a altura escapular, barra sobre cadera con pad.", icon: "🎯", series: 3, isTime: false, img: "https://www.spotebi.com/wp-content/uploads/2015/12/barbell-hip-thrust-exercise-illustration.jpg" },
+      { name: "Romanian deadlift (RDL)", meta: "3 × 10", focus: "Bisagra de cadera — espalda recta, empuja caderas hacia atrás, sientes estiramiento en isquiotibiales.", icon: "🏗️", series: 3, isTime: false, img: "https://www.spotebi.com/wp-content/uploads/2014/10/romanian-deadlift-exercise-illustration-spotebi.jpg" },
+      { name: "Split squat búlgaro", meta: "3 × 8 por lado", focus: "Pie trasero en banco — el trabajo lo hace la pierna delantera. Baja controlado, rodilla no colapsa.", icon: "⚖️", series: 3, isTime: false, img: "https://www.spotebi.com/wp-content/uploads/2014/10/dumbbell-bulgarian-split-squat-exercise-illustration-spotebi.jpg" },
+      { name: "Plank lateral", meta: "2 × 30 seg por lado", focus: "Cuadrado lumbar + oblicuos — cuerpo en línea recta, cadera no cae. Codo bajo el hombro.", icon: "📐", series: 2, isTime: true, img: "https://www.spotebi.com/wp-content/uploads/2014/10/side-plank-exercise-illustration-spotebi.jpg" },
+    ]
+  }
+];
+
+// STATE
+let state = {};
+let totalSeries = 0;
+let completedSeries = 0;
+
+function initState() {
+  state = {};
+  totalSeries = 0;
+  completedSeries = 0;
+  PHASES.forEach(phase => {
+    phase.exercises.forEach((ex, ei) => {
+      const key = `${phase.id}-${ei}`;
+      state[key] = new Array(ex.series).fill(false);
+      totalSeries += ex.series;
+    });
+  });
+}
+
+function buildUI() {
+  const main = document.getElementById('mainContent');
+  main.innerHTML = '';
+  PHASES.forEach((phase, pi) => {
+    if (pi > 0) {
+      const div = document.createElement('div');
+      div.className = 'phase-divider';
+      main.appendChild(div);
+    }
+    const phaseDiv = document.createElement('div');
+    phaseDiv.className = phase.class;
+
+    const header = document.createElement('div');
+    header.className = 'phase-header';
+    header.innerHTML = `
+      <span class="phase-tag">${phase.tag}</span>
+      <span class="phase-name">${phase.name}</span>
+      <span class="phase-time">${phase.time}</span>
+    `;
+    phaseDiv.appendChild(header);
+
+    phase.exercises.forEach((ex, ei) => {
+      const key = `${phase.id}-${ei}`;
+      const card = document.createElement('div');
+      card.className = 'exercise-card';
+      card.id = `card-${key}`;
+
+      const allDone = state[key].every(Boolean);
+      if (allDone) card.classList.add('all-done');
+
+      let seriesHTML = '';
+      for (let s = 0; s < ex.series; s++) {
+        const label = `S${s + 1}`;
+        const checked = state[key][s] ? 'checked' : '';
+        seriesHTML += `<button class="serie-btn ${checked}" data-label="${label}" onclick="toggleSerie('${key}', ${s}, this)"></button>`;
+      }
+
+      card.innerHTML = `
+        <div class="exercise-header">
+          <div class="exercise-icon" style="background:var(--surface2)">${ex.icon}</div>
+          <div class="exercise-info">
+            <div class="exercise-name" onclick="openImgModal(${phase.id}, ${ei})" style="cursor:pointer;text-decoration:underline;text-decoration-color:var(--text-muted);text-underline-offset:3px;">${ex.name}</div>
+            <div class="exercise-meta">${ex.meta}</div>
+            <div class="exercise-focus">${ex.focus}</div>
+          </div>
+          <div class="done-badge">✅</div>
+        </div>
+        <div class="series-grid">${seriesHTML}</div>
+      `;
+      phaseDiv.appendChild(card);
+    });
+    main.appendChild(phaseDiv);
+  });
+  updateProgress();
+}
+
+function toggleSerie(key, idx, btn) {
+  const wasDone = state[key][idx];
+  state[key][idx] = !wasDone;
+
+  if (state[key][idx]) {
+    btn.classList.add('checked');
+    completedSeries++;
+    btn.style.transform = 'scale(1.08)';
+    setTimeout(() => btn.style.transform = '', 150);
+  } else {
+    btn.classList.remove('checked');
+    completedSeries--;
+  }
+
+  // Check if exercise fully done
+  const card = document.getElementById(`card-${key}`);
+  const allDone = state[key].every(Boolean);
+  if (allDone) {
+    card.classList.add('all-done');
+  } else {
+    card.classList.remove('all-done');
+  }
+
+  saveState();
+  updateProgress();
+
+  // Check full completion
+  if (completedSeries === totalSeries) {
+    setTimeout(() => {
+      document.getElementById('completionScreen').classList.add('visible');
+    }, 600);
+  }
+}
+
+function updateProgress() {
+  document.getElementById('topProgress').textContent = `${completedSeries} / ${totalSeries}`;
+  const pct = totalSeries > 0 ? (completedSeries / totalSeries) * 100 : 0;
+  document.getElementById('progressFill').style.width = pct + '%';
+}
+
+function resetAll() {
+  clearInterval(timerInterval);
+  timerRunning = false;
+  timerSeconds = 0;
+  isRest = false;
+  updateTimerDisplay();
+  document.getElementById('startStopBtn').textContent = '▶';
+  document.getElementById('completionScreen').classList.remove('visible');
+  localStorage.removeItem('lcsState');
+  initState();
+  buildUI();
+}
+
+function saveState() {
+  localStorage.setItem('lcsState', JSON.stringify({ state, completedSeries }));
+}
+
+function loadState() {
+  const saved = localStorage.getItem('lcsState');
+  if (saved) {
+    try {
+      const parsed = JSON.parse(saved);
+      state = parsed.state;
+      completedSeries = parsed.completedSeries;
+      return true;
+    } catch(e) { return false; }
+  }
+  return false;
+}
+
+// TIMER
+let timerSeconds = 0;
+let timerInterval = null;
+let timerRunning = false;
+let isRest = false;
+
+function pad(n) { return String(n).padStart(2, '0'); }
+
+function updateTimerDisplay() {
+  const m = Math.floor(timerSeconds / 60);
+  const s = timerSeconds % 60;
+  document.getElementById('timerDisplay').textContent = `${pad(m)}:${pad(s)}`;
+}
+
+function toggleTimer() {
+  if (timerRunning) {
+    clearInterval(timerInterval);
+    timerRunning = false;
+    document.getElementById('startStopBtn').textContent = '▶';
+  } else {
+    timerRunning = true;
+    document.getElementById('startStopBtn').textContent = '⏸';
+    timerInterval = setInterval(() => {
+      if (isRest) {
+        timerSeconds--;
+        if (timerSeconds <= 0) {
+          timerSeconds = 0;
+          clearInterval(timerInterval);
+          timerRunning = false;
+          isRest = false;
+          document.getElementById('startStopBtn').textContent = '▶';
+          document.getElementById('timerDisplay').classList.remove('resting');
+          document.getElementById('timerLabel').textContent = 'stopwatch';
+          if ('vibrate' in navigator) navigator.vibrate([200, 100, 200]);
+        }
+      } else {
+        timerSeconds++;
+      }
+      updateTimerDisplay();
+    }, 1000);
+  }
+}
+
+function resetTimer() {
+  clearInterval(timerInterval);
+  timerRunning = false;
+  isRest = false;
+  timerSeconds = 0;
+  document.getElementById('startStopBtn').textContent = '▶';
+  document.getElementById('timerDisplay').classList.remove('resting');
+  document.getElementById('timerLabel').textContent = 'stopwatch';
+  updateTimerDisplay();
+}
+
+function startRest() {
+  clearInterval(timerInterval);
+  timerSeconds = 60;
+  isRest = true;
+  timerRunning = true;
+  document.getElementById('timerDisplay').classList.add('resting');
+  document.getElementById('timerLabel').textContent = 'descanso';
+  document.getElementById('startStopBtn').textContent = '⏸';
+  updateTimerDisplay();
+  timerInterval = setInterval(() => {
+    timerSeconds--;
+    updateTimerDisplay();
+    if (timerSeconds <= 0) {
+      timerSeconds = 0;
+      clearInterval(timerInterval);
+      timerRunning = false;
+      isRest = false;
+      document.getElementById('timerDisplay').classList.remove('resting');
+      document.getElementById('timerLabel').textContent = 'stopwatch';
+      document.getElementById('startStopBtn').textContent = '▶';
+      if ('vibrate' in navigator) navigator.vibrate([200, 100, 200]);
+    }
+  }, 1000);
+}
+
+// IMAGE MODAL
+function openImgModal(phaseId, exIdx) {
+  const phase = PHASES.find(p => p.id === phaseId);
+  const ex = phase.exercises[exIdx];
+  document.getElementById('modalTitle').textContent = ex.name;
+  document.getElementById('modalMeta').textContent = ex.meta;
+  document.getElementById('modalFocus').textContent = ex.focus;
+  const img = document.getElementById('modalImg');
+  img.src = ex.img;
+  img.onerror = () => { img.src = 'https://via.placeholder.com/400x220/13131a/6b6b88?text=Ver+en+YouTube'; };
+  document.getElementById('imgModal').classList.add('visible');
+  document.body.style.overflow = 'hidden';
+}
+function closeImgModal(e) {
+  if (e.target === document.getElementById('imgModal')) {
+    closeImgModalBtn();
+  }
+}
+function closeImgModalBtn() {
+  document.getElementById('imgModal').classList.remove('visible');
+  document.body.style.overflow = '';
+}
+
+// INIT
+initState();
+if (!loadState()) {
+  initState();
+}
+buildUI();
+</script>
+</body>
+</html>
